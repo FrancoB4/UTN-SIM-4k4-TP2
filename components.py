@@ -156,7 +156,19 @@ class LeftPanel(QWidget):
         raise NotImplementedError('This method should be implemented in subclasses.')
     
     def _check_inputs(self):
-        raise NotImplementedError('This method should be implemented in subclasses.')
+        if not self.n_input.text().replace('-', '').isdigit():
+            self.error_label.setText('Error: El tamaño de la muestra debe ser un número.')
+            return False
+        
+        if not int(self.n_input.text()) > 0:
+            self.error_label.setText('Error: El tamaño de la muestra debe ser mayor que 0.')
+            return False
+        
+        if not int(self.n_input.text()) <= 1_000_000:
+            self.error_label.setText('Error: El tamaño de la muestra debe ser menor que 1.000.000.')
+            return False
+        
+        return True
     
     def _get_data(self):
         raise NotImplementedError('This method should be implemented in subclasses.')
@@ -183,16 +195,7 @@ class UniformLeftPanel(LeftPanel):
         layout.addWidget(self.max)
     
     def _check_inputs(self):
-        if not self.n_input.text().replace('-', '').isdigit():
-            self.error_label.setText('Error: El tamaño de la muestra debe ser un número.')
-            return False
-        
-        if not int(self.n_input.text()) > 0:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser mayor que 0.')
-            return False
-        
-        if not int(self.n_input.text()) < 1_000_000:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser menor que 1.000.000.')
+        if not super()._check_inputs():
             return False
         
         if not self.min.text().replace('.', '', 1).replace('-', '').isdigit() or not self.max.text().replace('.', '', 1).replace('-', '').isdigit():
@@ -231,16 +234,7 @@ class ExponentialLeftPanel(LeftPanel):
         layout.addWidget(self.lamb)
         
     def _check_inputs(self):
-        if not self.n_input.text().replace('-', '').isdigit():
-            self.error_label.setText('Error: El tamaño de la muestra debe ser un número.')
-            return False
-        
-        if not int(self.n_input.text()) > 0:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser mayor que 0.')
-            return False
-        
-        if not int(self.n_input.text()) < 1_000_000:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser menor que 1.000.000.')
+        if not super()._check_inputs():
             return False
         
         if not self.lamb.text().replace('.', '', 1).replace('-', '').isdigit():
@@ -280,16 +274,7 @@ class NormalLeftPanel(LeftPanel):
         layout.addWidget(self.sigma)
         
     def _check_inputs(self):
-        if not self.n_input.text().replace('-', '').isdigit():
-            self.error_label.setText('Error: El tamaño de la muestra debe ser un número.')
-            return False
-        
-        if not int(self.n_input.text()) > 0:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser mayor que 0.')
-            return False
-        
-        if not int(self.n_input.text()) < 1_000_000:
-            self.error_label.setText('Error: El tamaño de la muestra debe ser menor que 1.000.000.')
+        if not super()._check_inputs():
             return False
         
         if not self.mu.text().replace('.', '', 1).replace('-', '').isdigit() or not self.sigma.text().replace('.', '', 1).replace('-', '').isdigit():
