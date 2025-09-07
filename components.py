@@ -216,8 +216,8 @@ class UniformLeftPanel(LeftPanel):
         n = int(self.n_input.text())    
         min_val = float(self.min.text())
         max_val = float(self.max.text())
-        
-        return generate_random_variable_distribution(n, uniform_distribution_generator, min=min_val, max=max_val)
+
+        return generate_random_variable_distribution(n, uniform_distribution_generator, ndigits=4, min=min_val, max=max_val)
 
 
 class ExponentialLeftPanel(LeftPanel):     
@@ -262,7 +262,7 @@ class ExponentialLeftPanel(LeftPanel):
         
         n = int(self.n_input.text())
         lamb = float(self.lamb.text())
-        return generate_random_variable_distribution(n, negative_exponential_distribution_generator, lamb=lamb)
+        return generate_random_variable_distribution(n, negative_exponential_distribution_generator, ndigits=4, lamb=lamb)
 
 
 class NormalLeftPanel(LeftPanel):
