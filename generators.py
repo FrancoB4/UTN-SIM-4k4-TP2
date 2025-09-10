@@ -42,8 +42,15 @@ def normal_distribution_generator(mu: float, sigma: float) -> float:
     return (np.sum(np.array([rnd.random() for _ in range(12)])) - 6) * sigma + mu
 
 
+def normal_distribution_generator_box_muller(mu: float, sigma: float) -> float:
+    return math.sqrt(-2.0 * math.log(rnd.random())) * math.cos(2.0 * math.pi * rnd.random()) * sigma + mu
+
 def generate_random_variable_distribution(n: int, callback, ndigits: int = -1, **kwargs) -> np.ndarray:
     return np.array([callback(**kwargs) for _ in range(n)]) if ndigits == -1 else np.array([round(callback(**kwargs), ndigits) for _ in range(n)])
+
+
+def generate_random_normal_variable_box_muller(n: int, mu: float, sigma: float, ndigits: int = -1) -> np.ndarray:
+    return np.array([normal_distribution_generator_box_muller(mu, sigma) for _ in range(n)]) if ndigits == -1 else np.array([round(normal_distribution_generator_box_muller(mu, sigma), ndigits) for _ in range(n)])
 
 
 def show_graph(uniform, normal_distribution, exponential_distribution, uniform_intervals: int = 5, exponential_intervals: int = 5, normal_intervals: int = 5):

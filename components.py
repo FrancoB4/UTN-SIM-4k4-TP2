@@ -33,7 +33,6 @@ class CopyableTableView(QTableView):
         if not indexes:
             return
 
-        # Ordenar por fila y columna
         indexes = sorted(indexes, key=lambda x: (x.row(), x.column()))
 
         rows = []
@@ -48,10 +47,8 @@ class CopyableTableView(QTableView):
             row_data.append(idx.data())
         rows.append('\t'.join(row_data))
 
-        # Unir filas con salto de línea
         clipboard_text = '\n'.join(rows)
 
-        # Copiar al portapapeles
         QApplication.clipboard().setText(clipboard_text.replace('.', ','))  # type: ignore
 
 
@@ -75,19 +72,15 @@ class HistogramWidget(FigureCanvasQTAgg):
         ax = self.figure.get_axes()[0]
         ax.clear()
 
-        # Histogram con bins
         counts, bin_edges, patches = ax.hist(
             self.x, bins=self.intervals, alpha=0.7
         )
 
-        # Generar etiquetas para cada intervalo
         labels = [f"[{bin_edges[i]:.2f}, {bin_edges[i+1]:.2f})" for i in range(len(bin_edges)-1)]
 
-        # Asignar cada etiqueta al patch correspondiente
         for patch, label in zip(patches, labels): #type: ignore
             patch.set_label(label)
 
-        # Mostrar leyenda
         ax.legend(fontsize=8, title="Intervalos")
 
         self.draw()
@@ -297,7 +290,7 @@ class NormalLeftPanel(LeftPanel):
         n = int(self.n_input.text())
         mu = float(self.mu.text())
         sigma = float(self.sigma.text())
-        return generate_random_variable_distribution(n, normal_distribution_generator, ndigits=4, mu=mu, sigma=sigma)
+        return generate_random_variable_distribution(n, normal_distribution_generator_box_muller, ndigits=4, mu=mu, sigma=sigma)
 
 class Tab(QWidget):
     def __init__(self, left_panel, update_plot, parent=None):
