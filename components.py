@@ -6,7 +6,7 @@ matplotlib.use('Qt5Agg')
 
 
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableView, QComboBox, QLineEdit, QPushButton, QApplication, QLabel
+    QWidget, QVBoxLayout, QHBoxLayout, QTableView, QComboBox, QLineEdit, QPushButton, QApplication, QLabel, QStackedLayout
 )
 
 from PyQt5.QtGui import QKeySequence
@@ -72,23 +72,30 @@ class HistogramWidget(FigureCanvasQTAgg):
         ax = self.figure.get_axes()[0]
         ax.clear()
 
-        counts, bin_edges, patches = ax.hist(
+        self.counts, self.bin_edges, patches = ax.hist(
             self.x, bins=self.intervals, alpha=0.7
         )
 
-        labels = [f"[{bin_edges[i]:.2f}, {bin_edges[i+1]:.2f})" for i in range(len(bin_edges)-1)]
+        labels = [f"[{self.bin_edges[i]:.2f}, {self.bin_edges[i+1]:.2f})" for i in range(len(self.bin_edges)-1)]
 
         for patch, label in zip(patches, labels): #type: ignore
             patch.set_label(label)
 
         ax.legend(fontsize=8, title="Intervalos")
+        ax.set_xlabel("Valor")
+        ax.set_ylabel("Frecuencia")
+        ax.set_title("Histograma de distribución de frecuencia")
 
         self.draw()
+        return self.counts, self.bin_edges
 
 
 class RightPanel(QWidget):
-    def __init__(self, x, label: str = '', parent=None, ):
+    def __init__(self, x, update_dist_table, left_panel, label: str = '', parent=None):
         super().__init__(parent)
+        
+        self.update_dist_table = update_dist_table
+        self.left_panel = left_panel
         
         self.x = x
         self.label = label
@@ -111,11 +118,12 @@ class RightPanel(QWidget):
         self.setLayout(layout)
         
     def update_plot(self, intervals: str):
-        self.histogram.update_histogram(intervals=int(intervals))
+        counts, bin_edges = self.histogram.update_histogram(intervals=int(intervals))
+        self.update_dist_table(counts, bin_edges)
         
     def update_plot_data(self, x):
         self.x = x
-        self.histogram.update_histogram(x=self.x)
+        return self.histogram.update_histogram(x=self.x)
 
 
 class LeftPanel(QWidget):
@@ -128,7 +136,9 @@ class LeftPanel(QWidget):
         self.setGeometry(100, 100, 400, 600)
 
         layout = QVBoxLayout(self)
-
+        button_layout = QHBoxLayout()
+        self.stacklayout = QStackedLayout()
+        
         self._add_configuration(layout)
 
         self.error_label = QLabel('', self)
@@ -139,12 +149,31 @@ class LeftPanel(QWidget):
         self.generate_button.clicked.connect(self.on_generate)
         layout.addWidget(self.generate_button)
 
+        btn = QPushButton('Valores')
+        btn.pressed.connect(self.activate_tab_1)
+        button_layout.addWidget(btn)
         self.table = CopyableTableView()
-        layout.addWidget(self.table)
+        self.stacklayout.addWidget(self.table)
+        
+        btn = QPushButton('Distribución de frecuencias')
+        btn.pressed.connect(self.activate_tab_2)
+        button_layout.addWidget(btn)
+        self.dist_table = CopyableTableView()
+        self.stacklayout.addWidget(self.dist_table)
+        
+        #self.table = CopyableTableView()
+        #layout.addWidget(self.table)
+        layout.addLayout(button_layout)
+        layout.addLayout(self.stacklayout)
 
         self.setLayout(layout)
 
+    def activate_tab_1(self):
+        self.stacklayout.setCurrentIndex(0)
 
+    def activate_tab_2(self):
+        self.stacklayout.setCurrentIndex(1)
+    
     def _add_configuration(self, layout: QVBoxLayout):
         raise NotImplementedError('This method should be implemented in subclasses.')
     
@@ -167,10 +196,30 @@ class LeftPanel(QWidget):
         raise NotImplementedError('This method should be implemented in subclasses.')
 
     def on_generate(self):
-        data = self._get_data()
-        self.table.setModel(PandasModel(pd.DataFrame(data, columns=['Valores'])))
+        self.data = self._get_data()
+        self.table.setModel(PandasModel(pd.DataFrame(self.data, columns=['Valores'])))
         self.table.resizeColumnsToContents()
-        self.update_plot(data)
+        counts, bin_edges = self.update_plot(self.data)
+        self.update_dist_table(counts, bin_edges)
+        
+    def update_dist_table(self, counts, bin_edges):
+        counts, bin_edges = self.update_plot(self.data)
+        min_edges = [0] * len(counts)
+        max_edges = [0] * len(counts)
+        frecuencia_acumulada = [0] * len(counts)
+        for i in range(len(bin_edges)-1):
+            min_edges[i] = round(bin_edges[i], 4)
+            max_edges[i] = round(bin_edges[i+1], 4)
+            if i == 0:
+                frecuencia_acumulada[i] = round(counts[i])
+            else:
+                frecuencia_acumulada[i] = frecuencia_acumulada[i-1] + round(counts[i])
+        self.dist_table.setModel(PandasModel(pd.DataFrame({
+            'Limite inferior': min_edges, 
+            'Limite superior': max_edges, 
+            'Frecuencia observada': counts,
+            #'Frecuencia acumulada': frecuencia_acumulada
+            })))
 
 
 class UniformLeftPanel(LeftPanel):
@@ -296,14 +345,19 @@ class Tab(QWidget):
     def __init__(self, left_panel, update_plot, parent=None):
         super().__init__(parent)
 
-        layout = QHBoxLayout(self)
-        layout.addWidget(left_panel(self.update_plot_data))
+        self.left_panel = left_panel(self.update_plot_data)
         
-        self.right_panel = RightPanel([])
+        layout = QHBoxLayout(self)
+        layout.addWidget(self.left_panel)
+        
+        self.right_panel = RightPanel([], self.update_dist_table, left_panel=self.left_panel)
         
         layout.addWidget(self.right_panel)
 
         self.setLayout(layout)
         
     def update_plot_data(self, data):
-        self.right_panel.update_plot_data(data)
+        return self.right_panel.update_plot_data(data)
+    
+    def update_dist_table(self, counts, bin_edges):
+        self.left_panel.update_dist_table(counts, bin_edges)

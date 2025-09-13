@@ -43,9 +43,28 @@ def normal_distribution_generator(mu: float, sigma: float) -> float:
 
 
 def normal_distribution_generator_box_muller(mu: float, sigma: float) -> float:
+    """Generates a random number from a normal distribution using de convolution method.
+
+    Args:
+        mu (float): The mean of the distribution.
+        sigma (float): The standard deviation of the distribution.
+
+    Returns:
+        float: A random number from the normal distribution.
+    """
     return math.sqrt(-2.0 * math.log(rnd.random())) * math.cos(2.0 * math.pi * rnd.random()) * sigma + mu
 
 def generate_random_variable_distribution(n: int, callback, ndigits: int = -1, **kwargs) -> np.ndarray:
+    """Generates a random variable distribution.
+
+    Args:
+        n (int): The number of samples to generate.
+        callback (function): The function used to generate each sample.
+        ndigits (int, optional): The number of decimal places to round the samples. Defaults to -1.
+
+    Returns:
+        np.ndarray: An array of generated samples.
+    """
     return np.array([callback(**kwargs) for _ in range(n)]) if ndigits == -1 else np.array([round(callback(**kwargs), ndigits) for _ in range(n)])
 
 
